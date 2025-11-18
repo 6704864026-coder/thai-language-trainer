@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CODEC LOGIN ::</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- MGS Theme --- */
+        
+        :root {
+            --mgs-green: #00ff00;
+            --mgs-dark: #0a0a0a;
+            --mgs-bg: #000000;
+            --mgs-grey: #cccccc;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--mgs-bg);
+            color: var(--mgs-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            /* Add subtle scan lines */
+            background-image: linear-gradient(
+                rgba(0, 255, 0, 0.1) 1px, 
+                transparent 1px
+            );
+            background-size: 100% 3px;
+        }
+
+        .login-container {
+            width: 400px;
+            padding: 20px;
+            background-color: var(--mgs-dark);
+            border: 2px solid var(--mgs-green);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            animation: flicker 3s infinite alternate;
+        }
+
+        @keyframes flicker {
+            0%   { opacity: 1; }
+            50%  { opacity: 0.95; }
+            100% { opacity: 1; }
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-top: 0;
+            margin-bottom: 25px;
+            text-shadow: 0 0 5px var(--mgs-green);
+        }
+
+        label {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            width: 100%;
+            padding: 8px;
+            background-color: var(--mgs-bg);
+            border: 1px solid var(--mgs-green);
+            color: var(--mgs-green);
+            margin-bottom: 15px;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+        }
+
+        button {
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            width: 100%;
+            padding: 10px;
+            background-color: var(--mgs-green);
+            color: var(--mgs-dark);
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background-color: var(--mgs-dark);
+            color: var(--mgs-green);
+            border: 1px solid var(--mgs-green);
+        }
+
+        #output {
+            font-family: 'VT323', monospace;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: var(--mgs-bg);
+            border: 1px dashed var(--mgs-grey);
+            color: var(--mgs-grey);
+            white-space: pre-wrap; /* Allows text to wrap */
+            word-wrap: break-word;
+            min-height: 50px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>:: CODEC LOGIN ::</h2>
+        <form id="loginForm">
+            <label for="username">USER:</label>
+            <input type="text" id="username" required>
+            
+            <label for="password">PASS:</label>
+            <input type="password" id="password" required>
+            
+            <button type="submit">CONNECT</button>
+        </form>
+
+        <pre id="output">AWAITING INPUT...</pre>
+    </div>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const output = document.getElementById("output");
+            output.textContent = "SENDING REQUEST...";
+
+            try {
+                const res = await fetch("/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const text = await res.text(); // raw response
+                output.textContent = `STATUS: ${res.status}\n\n${text}`;
+                if (res.status === 200) {
+                    try {
+                        const data = JSON.parse(text);
+                        localStorage.setItem('username', data.username);
+                        localStorage.setItem('token', data.token);
+                        window.location.href = 'welcome.html';
+                    } catch (e) {
+                        output.textContent += '\nERROR PARSING RESPONSE.';
+                    }
+                }
+            } catch (err) {
+                output.textContent = "CONNECTION ERROR: " + err;
+            }
+        });
+    </script>
+</body>
+</html>

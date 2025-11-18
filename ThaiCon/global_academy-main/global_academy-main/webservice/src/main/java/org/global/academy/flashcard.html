@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>:: FLASHCARD ::</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --mgs-green: #00ff00;
+            --mgs-dark: #0a0a0a;
+            --mgs-bg: #000000;
+        }
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--mgs-bg);
+            color: var(--mgs-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-image: linear-gradient(
+                rgba(0, 255, 0, 0.1) 1px, 
+                transparent 1px
+            );
+            background-size: 100% 3px;
+        }
+        .main-container {
+            width: 450px;
+            padding: 20px;
+            background-color: var(--mgs-dark);
+            border: 2px solid var(--mgs-green);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            text-align: center;
+        }
+        h2 {
+            font-size: 2.5rem;
+            margin-top: 0;
+            text-shadow: 0 0 5px var(--mgs-green);
+        }
+        .flashcard {
+            background-color: var(--mgs-bg);
+            border: 1px solid var(--mgs-green);
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        #card-front {
+            font-size: 6rem;
+            color: #ffffff;
+        }
+        #card-back {
+            font-size: 2rem;
+        }
+        button {
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            width: 100%;
+            padding: 10px;
+            background-color: var(--mgs-green);
+            color: var(--mgs-dark);
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        button:hover {
+            background-color: var(--mgs-dark);
+            color: var(--mgs-green);
+            border: 1px solid var(--mgs-green);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h2>FLASHCARD PROTOCOL</h2>
+
+        <div class="flashcard">
+            <div id="card-front">...</div>
+            <div id="card-back">LOADING...</div>
+        </div>
+
+        <button id="newCardButton">NEXT CARD</button>
+    </div>
+
+    <script>
+        const cardFront = document.getElementById('card-front');
+        const cardBack = document.getElementById('card-back');
+        const newCardButton = document.getElementById('newCardButton');
+
+        async function getNewCard() {
+            cardFront.textContent = '...';
+            cardBack.textContent = 'LOADING...';
+
+            try {
+                // This calls the /flashcard route you built in Server.java
+                const response = await fetch('/flashcard');
+                const data = await response.json(); 
+                
+                cardFront.textContent = data.front;
+                cardBack.textContent = data.back;
+
+            } catch (err) {
+                cardFront.textContent = 'X';
+                cardBack.textContent = 'ERROR: CANNOT CONNECT TO SERVER';
+            }
+        }
+
+        newCardButton.addEventListener('click', getNewCard);
+        getNewCard(); // Load the first card
+    </script>
+</body>
+</html>
