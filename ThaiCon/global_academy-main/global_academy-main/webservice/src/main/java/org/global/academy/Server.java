@@ -33,11 +33,9 @@ public class Server {
         });
 
         Gson gson = new Gson();
-
-        // --- THIS IS THE NEW CODE I ADDED INSIDE main() ---
         Random random = new Random();
 
-        // This is the GET route for serving a random flashcard
+        // This is the GET route for serving a random Thai flashcard
         get("/flashcard", (req, res) -> {
             
             // 1. Pick a random card from our static list
@@ -47,6 +45,21 @@ public class Server {
             res.type("application/json");
 
             // 3. Convert the card object to a JSON string and return it
+            return gson.toJson(randomCard);
+        }); // <-- I just cleaned up the formatting here
+
+        
+        // --- THIS IS THE NEW CODE FOR TASK 4 ---
+        // --- I ADDED THIS INSIDE main() ---
+        get("/showrandcard", (req, res) -> {
+            
+            // Pick a random card from the *new* generic list
+            Flashcard randomCard = genericFlashcards.get(random.nextInt(genericFlashcards.size()));
+
+            // Set the response type to "application/json"
+            res.type("application/json");
+
+            // Convert the card object to a JSON string and return it
             return gson.toJson(randomCard);
         });
         // --- END OF NEW CODE ---
@@ -67,7 +80,9 @@ public class Server {
         });
     } // <-- THIS IS THE END OF THE main() METHOD
     
-    // --- THIS IS THE NEW CODE I ADDED *OUTSIDE* main() ---
+    
+    // --- THIS IS ALL YOUR CODE *OUTSIDE* main() ---
+    // --- (IT IS CORRECT) ---
     
     // A static list to hold all our flashcards
     private static List<Flashcard> flashcards = createFlashcards();
@@ -86,6 +101,21 @@ public class Server {
         cards.add(new ThaiConsonantFlashcard("ซ", "sɔɔ sôo (chain)"));
         cards.add(new ThaiConsonantFlashcard("ด", "dɔɔ dèk (child)"));
         cards.add(new ThaiConsonantFlashcard("ต", "tɔɔ tào (turtle)"));
+        
+        
+        return cards;
+    }
+
+    // --- For Task 3: Create 3 generic flashcards ---
+    private static List<Flashcard> genericFlashcards = createGenericFlashcards();
+    
+    private static List<Flashcard> createGenericFlashcards() {
+        List<Flashcard> cards = new ArrayList<>();
+        
+        // As requested, country-capital pairs
+        cards.add(new Flashcard("Japan", "Tokyo"));
+        cards.add(new Flashcard("France", "Paris"));
+        cards.add(new Flashcard("Thailand", "Bangkok"));
         
         return cards;
     }
