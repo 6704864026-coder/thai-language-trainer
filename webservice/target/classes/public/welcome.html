@@ -8,84 +8,185 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         body { font-family: 'Fredoka', sans-serif; background-color: #1a1a1a; overflow-x: hidden; }
+        
         .chalkboard-bg {
             background-color: #1a1a1a;
             background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 60%),
             url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
         }
+        
         .handwritten { font-family: 'Patrick Hand', cursive; }
+        
         .perspective-1000 { perspective: 1000px; }
         .transform-style-3d { transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
         .flipped { transform: rotateY(180deg); }
+
+        /* Grid Item Styles */
+        .grid-item {
+            border: 1px dashed rgba(255,255,255,0.2);
+            transition: all 0.2s;
+        }
+        .grid-item.active {
+            border: 2px solid #FCD34D; /* Yellow */
+            background: rgba(253, 224, 71, 0.1);
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(253, 224, 71, 0.3);
+        }
+        .grid-item.done {
+            opacity: 0.3;
+            background: rgba(255,255,255,0.1);
+            text-decoration: line-through;
+        }
+        
+        /* Custom Scrollbar for Grid */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
     </style>
 </head>
 <body class="chalkboard-bg min-h-screen flex flex-col text-white">
+    
     <header class="flex items-center justify-between p-4 border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-50">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-yellow-300 border-2 border-black"></div>
+            <div class="w-10 h-10 rounded-full bg-yellow-300 border-2 border-black flex items-center justify-center">
+                <div class="w-1 h-3 bg-black rounded-full mx-0.5"></div>
+                <div class="w-1 h-3 bg-black rounded-full mx-0.5"></div>
+            </div>
             <div>
                 <h1 class="font-bold text-yellow-400 text-lg leading-none">Class 3-E</h1>
-                <p class="text-xs text-gray-400">Student: <span id="userDisplay">...</span></p>
+                <p class="text-xs text-gray-400">Agent: <span id="userDisplay">...</span></p>
             </div>
         </div>
         <button onclick="logout()" class="p-2 hover:bg-white/10 rounded-full transition"><i class="ph ph-sign-out text-xl"></i></button>
     </header>
 
-    <main class="flex-1 flex flex-col items-center justify-center p-4 max-w-2xl mx-auto w-full">
-        <div class="w-full mb-8 flex justify-between items-end">
-            <div class="text-4xl font-bold text-gray-500 opacity-20 font-serif italic">MISSION</div>
-            <div class="bg-white text-black rounded-2xl rounded-bl-none px-4 py-2 max-w-xs text-sm handwritten relative mb-4 animate-bounce">
-                "Nurufufufu... translate this!"
-                <div class="absolute bottom-0 left-0 transform translate-y-1/2 -translate-x-0 w-3 h-3 bg-white rotate-45"></div>
-            </div>
-        </div>
-
-        <div id="cardContainer" class="relative w-full h-80 cursor-pointer perspective-1000 group" onclick="flipCard()">
-            <div id="cardInner" class="relative w-full h-full transition-transform duration-500 transform-style-3d">
+    <main class="flex-1 flex flex-col md:flex-row items-center justify-center p-4 max-w-6xl mx-auto w-full gap-8">
+        
+        <div class="w-full md:w-1/3 flex flex-col gap-4 order-2 md:order-1">
+            <div class="bg-white/5 border border-white/10 rounded-xl p-4 h-[400px] flex flex-col shadow-xl">
+                <h3 class="text-yellow-400 font-bold mb-3 handwritten text-xl flex justify-between">
+                    <span>Target List</span>
+                    <span id="counter">0 / 44</span>
+                </h3>
                 
-                <div class="absolute w-full h-full backface-hidden rounded-xl shadow-xl bg-cover bg-center border-4 border-gray-700 flex flex-col items-center justify-center p-6 bg-[#2a2a2a]">
-                    <span class="text-yellow-500 text-sm font-bold tracking-widest uppercase mb-4">Translate this</span>
-                    <h2 id="cardFront" class="text-5xl text-white handwritten text-center leading-relaxed">Loading...</h2>
-                    <p class="mt-8 text-gray-500 text-sm animate-pulse">Tap to reveal</p>
-                </div>
-
-                <div class="absolute w-full h-full backface-hidden rotate-y-180 rounded-xl shadow-xl border-4 border-yellow-400 bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
-                    <h2 id="cardBack" class="text-4xl text-gray-800 handwritten font-bold text-center relative z-10">...</h2>
-                </div>
+                <div id="gridContainer" class="grid grid-cols-5 gap-2 overflow-y-auto custom-scroll pr-2 flex-1">
+                    </div>
             </div>
         </div>
 
-        <div id="controls" class="mt-10 grid grid-cols-2 gap-6 w-full transition-opacity duration-300 opacity-0 pointer-events-none">
-            <button onclick="handleNext(false)" class="flex flex-col items-center justify-center p-4 bg-red-500/10 border-2 border-red-500/50 rounded-xl hover:bg-red-500 hover:border-red-500 transition-all">
-                <i class="ph ph-x-circle text-3xl text-red-400 mb-2"></i>
-                <span class="text-red-200 font-bold uppercase text-sm">Needs Study</span>
-            </button>
+        <div class="w-full md:w-2/3 flex flex-col items-center order-1 md:order-2">
+            
+            <div class="w-full mb-4 flex justify-between items-end max-w-md">
+                <div class="text-4xl font-bold text-gray-500 opacity-20 font-serif italic">MISSION</div>
+                <div class="bg-white text-black rounded-2xl rounded-bl-none px-4 py-2 max-w-xs text-sm handwritten relative mb-4 animate-bounce">
+                    "Nurufufufu... translate this!"
+                    <div class="absolute bottom-0 left-0 transform translate-y-1/2 -translate-x-0 w-3 h-3 bg-white rotate-45"></div>
+                </div>
+            </div>
 
-            <button onclick="handleNext(true)" class="flex flex-col items-center justify-center p-4 bg-green-500/10 border-2 border-green-500/50 rounded-xl hover:bg-green-500 hover:border-green-500 transition-all">
-                <i class="ph ph-check-circle text-3xl text-green-400 mb-2"></i>
-                <span class="text-green-200 font-bold uppercase text-sm">Got it!</span>
-            </button>
+            <div id="cardContainer" class="relative w-full max-w-md h-96 cursor-pointer perspective-1000 group" onclick="flipCard()">
+                <div id="cardInner" class="relative w-full h-full transition-transform duration-500 transform-style-3d">
+                    
+                    <div class="absolute w-full h-full backface-hidden rounded-xl shadow-2xl border-4 border-gray-600 flex flex-col items-center justify-center p-6 bg-[#2a2a2a]">
+                        <span class="text-yellow-500 text-sm font-bold tracking-widest uppercase mb-4">Target</span>
+                        <h2 id="cardFront" class="text-8xl text-white handwritten text-center leading-relaxed">?</h2>
+                        <p class="mt-8 text-gray-500 text-sm animate-pulse">Tap to reveal</p>
+                    </div>
+
+                    <div class="absolute w-full h-full backface-hidden rotate-y-180 rounded-xl shadow-2xl border-4 border-yellow-400 bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                         <div class="absolute inset-0 opacity-10 bg-[url('https://i.pinimg.com/originals/8f/c3/7b/8fc37b74b608a622588f7a214300c032.png')] bg-center bg-cover"></div>
+                        
+                        <h2 id="cardBack" class="text-4xl text-gray-800 handwritten font-bold text-center relative z-10 mb-2">...</h2>
+                        <span id="cardClass" class="bg-black text-yellow-400 px-3 py-1 rounded-full text-xs font-bold uppercase relative z-10">... Class</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="controls" class="mt-8 grid grid-cols-1 w-full max-w-md transition-opacity duration-300 opacity-0 pointer-events-none">
+                <button onclick="handleNext()" class="bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-3 px-8 rounded-lg shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2">
+                    NEXT TARGET <i class="ph-bold ph-arrow-right"></i>
+                </button>
+            </div>
         </div>
+
     </main>
 
     <script>
+        // Check Login
         const username = localStorage.getItem('username');
         if (!username) window.location.href = 'login.html';
         document.getElementById('userDisplay').textContent = username;
 
+        // Variables
+        let deck = [];
+        let currentIndex = 0;
         let isFlipped = false;
 
-        async function fetchCard() {
+        // Initialize
+        async function initGame() {
             try {
-                const res = await fetch('/flashcard');
-                const data = await res.json();
-                document.getElementById('cardFront').textContent = data.front;
-                document.getElementById('cardBack').textContent = data.back;
+                // Fetch ALL cards to build the grid
+                const res = await fetch('/all-flashcards');
+                deck = await res.json();
+                
+                // Shuffle locally if desired, or use server order
+                // deck.sort(() => Math.random() - 0.5); 
+                
+                renderGrid();
+                loadCard(0);
             } catch (e) {
+                console.error(e);
                 document.getElementById('cardFront').textContent = "Error";
             }
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('gridContainer');
+            grid.innerHTML = ''; // Clear
+
+            deck.forEach((card, index) => {
+                const el = document.createElement('div');
+                el.className = 'grid-item w-full aspect-square flex items-center justify-center rounded text-sm font-bold text-white/50 cursor-default';
+                
+                if (index < currentIndex) {
+                    el.classList.add('done');
+                    el.textContent = card.front;
+                } else if (index === currentIndex) {
+                    el.classList.add('active');
+                    el.textContent = card.front;
+                    el.style.color = '#fff';
+                } else {
+                    // Future cards hidden
+                    el.textContent = '?';
+                }
+                
+                grid.appendChild(el);
+            });
+            
+            document.getElementById('counter').textContent = `${currentIndex + 1} / ${deck.length}`;
+        }
+
+        function loadCard(index) {
+            if (index >= deck.length) {
+                alert("Mission Complete!");
+                location.reload();
+                return;
+            }
+
+            const card = deck[index];
+            document.getElementById('cardFront').textContent = card.front;
+            document.getElementById('cardBack').textContent = card.back;
+            // Handle optional class group
+            if(card.classGroup) {
+                document.getElementById('cardClass').textContent = card.classGroup + " Class";
+                document.getElementById('cardClass').style.display = 'inline-block';
+            } else {
+                document.getElementById('cardClass').style.display = 'none';
+            }
+
+            renderGrid();
         }
 
         function flipCard() {
@@ -102,15 +203,16 @@
             }
         }
 
-        function handleNext(known) {
-            // Reset for next card
+        function handleNext() {
             isFlipped = false;
             document.getElementById('cardInner').classList.remove('flipped');
             document.getElementById('controls').classList.add('opacity-0', 'pointer-events-none');
             
+            // Wait for flip animation
             setTimeout(() => {
-                fetchCard();
-            }, 500);
+                currentIndex++;
+                loadCard(currentIndex);
+            }, 300);
         }
 
         function logout() {
@@ -118,8 +220,8 @@
             window.location.href = 'login.html';
         }
 
-        // Load first card
-        fetchCard();
+        // Start
+        initGame();
     </script>
 </body>
 </html>

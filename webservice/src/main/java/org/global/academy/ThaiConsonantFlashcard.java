@@ -1,13 +1,12 @@
-package org.global.academy; // Your correct package
+package org.global.academy;
 
-/**
- * This is your Thai Consonant flashcard.
- * It just extends the base Flashcard.
- */
 public class ThaiConsonantFlashcard extends Flashcard {
-    
-    public ThaiConsonantFlashcard(String front, String back) {
-        // Call the constructor of the parent Flashcard class
+    private String details;
+    private String classGroup;
+
+    public ThaiConsonantFlashcard(String front, String back, String details, String classGroup) {
         super(front, back);
+        this.details = details;
+        this.classGroup = classGroup;
     }
 }

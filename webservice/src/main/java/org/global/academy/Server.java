@@ -3,144 +3,123 @@ package org.global.academy;
 import static spark.Spark.*;
 import com.google.gson.Gson;
 import java.util.ArrayList;
+import java.util.Collections; // Added for shuffling
 import java.util.List;
 import java.util.Random;
-import java.nio.file.Paths;
-import java.nio.file.Path;
-import java.io.IOException;
 
 public class Server {
+    
+    private static List<Flashcard> flashcards;
+
     public static void main(String[] args) {
+        // 1. Initialize Thai Data
+        flashcards = createThaiFlashcards();
+        
+        // 2. Configure Spark
         port(8080);
         staticFiles.location("/public");
         
-        // Simple CORS
+        // 3. CORS & Encoding Headers
         before((request, response) -> {
-            response.header("Access-Control-Allow-Origin", "*"); // or specific origin
+            response.header("Access-Control-Allow-Origin", "*");
             response.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-            response.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
-        });
-        options("/*", (req, res) -> {
-            String accessControlRequestHeaders = req.headers("Access-Control-Request-Headers");
-            if (accessControlRequestHeaders != null) {
-                res.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
-            }
-            String accessControlRequestMethod = req.headers("Access-Control-Request-Method");
-            if (accessControlRequestMethod != null) {
-                res.header("Access-Control-Allow-Methods", accessControlRequestMethod);
-            }
-            return "OK";
+            response.type("application/json; charset=utf-8");
         });
 
         Gson gson = new Gson();
         Random random = new Random();
 
-        // This is the GET route for serving a random Thai flashcard
+        // --- ROUTES ---
+
+        // NEW: Returns ALL cards so we can make a grid
+        get("/all-flashcards", (req, res) -> {
+            res.type("application/json; charset=utf-8");
+            // Return a copy so we don't mess up the original order on server
+            List<Flashcard> shuffled = new ArrayList<>(flashcards);
+            Collections.shuffle(shuffled); 
+            return gson.toJson(shuffled);
+        });
+
+        // OLD: Still here if you need single random card
         get("/flashcard", (req, res) -> {
-            
-            // 1. Pick a random card from our static list
-            Flashcard randomCard = flashcards.get(random.nextInt(flashcards.size()));
-
-            // 2. Set the response type to "application/json"
-            res.type("application/json");
-
-            // 3. Convert the card object to a JSON string and return it
-            return gson.toJson(randomCard);
-        }); // <-- I just cleaned up the formatting here
-
-        
-        // --- THIS IS THE NEW CODE FOR TASK 4 ---
-        // --- I ADDED THIS INSIDE main() ---
-        get("/showrandcard", (req, res) -> {
-            
-            // Pick a random card from the *new* generic list
-            Flashcard randomCard = genericFlashcards.get(random.nextInt(genericFlashcards.size()));
-
-            // Set the response type to "application/json"
-            res.type("application/json");
-
-            // Convert the card object to a JSON string and return it
+            int randomIndex = random.nextInt(flashcards.size());
+            Flashcard randomCard = flashcards.get(randomIndex);
+            res.type("application/json; charset=utf-8");
             return gson.toJson(randomCard);
         });
-        // --- END OF NEW CODE ---
-
 
         post("/login", (req, res) -> {
-            System.out.println("Received /login request with body: " + req.body());
             LoginRequest lr = gson.fromJson(req.body(), LoginRequest.class);
-            // TODO: validate username/password
-            if ("alice".equals(lr.username) && "secret".equals(lr.password)) {
+            if ("Alice".equalsIgnoreCase(lr.username) && "Secret".equals(lr.password)) {
                 res.type("application/json");
-                return gson.toJson(new LoginResponse("a-fake-token", lr.username));
+                return gson.toJson(new LoginResponse("token-alice-123", "Alice"));
             } else {
                 res.status(401);
                 res.type("application/json");
-                return gson.toJson(new ErrorResponse("Invalid credentials"));
+                return gson.toJson(new ErrorResponse("Authentication Failed"));
             }
         });
-    } // <-- THIS IS THE END OF THE main() METHOD
-    
-    
-    // --- THIS IS ALL YOUR CODE *OUTSIDE* main() ---
-    // --- (IT IS CORRECT) ---
-    
-    // A static list to hold all our flashcards
-    private static List<Flashcard> flashcards = createFlashcards();
-    
-    // A helper method to create and populate the list of 10 cards
-    private static List<Flashcard> createFlashcards() {
+        
+        System.out.println("Koro-sensei is ready on http://localhost:8080");
+    }
+
+    // --- CLASSES ---
+    static class LoginRequest { String username; String password; }
+    static class LoginResponse { String token; String username; LoginResponse(String t, String u) { token = t; username = u; }}
+    static class ErrorResponse { String error; ErrorResponse(String e) { error = e; }}
+
+    // --- DATA ---
+    private static List<Flashcard> createThaiFlashcards() {
         List<Flashcard> cards = new ArrayList<>();
-        
-        cards.add(new ThaiConsonantFlashcard("ก", "kɔɔ kày (chicken)"));
-        cards.add(new ThaiConsonantFlashcard("ข", "khɔ̌ɔ khày (egg)"));
-        cards.add(new ThaiConsonantFlashcard("ค", "khɔɔ khwaay (buffalo)"));
-        cards.add(new ThaiConsonantFlashcard("ง", "ŋɔɔ ŋuu (snake)"));
-        cards.add(new ThaiConsonantFlashcard("จ", "cɔɔ caan (plate)"));
-        cards.add(new ThaiConsonantFlashcard("ฉ", "chɔ̌ɔ chìŋ (cymbals)"));
-        cards.add(new ThaiConsonantFlashcard("ช", "chɔɔ cháaŋ (elephant)"));
-        cards.add(new ThaiConsonantFlashcard("ซ", "sɔɔ sôo (chain)"));
-        cards.add(new ThaiConsonantFlashcard("ด", "dɔɔ dèk (child)"));
-        cards.add(new ThaiConsonantFlashcard("ต", "tɔɔ tào (turtle)"));
-        
-        
+        // MID CLASS
+        cards.add(new ThaiConsonantFlashcard("ก", "Gor Gai (Chicken)", "First letter. Mid Class. Sound: G.", "Mid"));
+        cards.add(new ThaiConsonantFlashcard("จ", "Jor Jaan (Plate)", "Mid Class. Sound: J.", "Mid"));
+        cards.add(new ThaiConsonantFlashcard("ด", "Dor Dek (Child)", "Mid Class. Sound: D.", "Mid"));
+        cards.add(new ThaiConsonantFlashcard("ต", "Tor Tao (Turtle)", "Mid Class. Sound: T.", "Mid"));
+        cards.add(new ThaiConsonantFlashcard("ฎ", "Dor Cha-da (Headdress)", "Mid Class. Sound: D.", "Mid"));
+        cards.add(new ThaiConsonantFlashcard("ฏ", "Tor Pa-tak (Goad)", "Mid Class. Sound: T.", "Mid"));
+        cards.add(new ThaiConsonantFlashcard("บ", "Bor Bai-mai (Leaf)", "Mid Class. Sound: B.", "Mid"));
+        cards.add(new ThaiConsonantFlashcard("ป", "Por Pla (Fish)", "Mid Class. Sound: P.", "Mid"));
+        cards.add(new ThaiConsonantFlashcard("อ", "Or Ang (Basin)", "Mid Class. Sound: O (Silent initial).", "Mid"));
+
+        // HIGH CLASS
+        cards.add(new ThaiConsonantFlashcard("ข", "Khor Khai (Egg)", "High Class. Sound: K (rising).", "High"));
+        cards.add(new ThaiConsonantFlashcard("ฃ", "Khor Khuad (Bottle)", "High Class. Obsolete.", "High"));
+        cards.add(new ThaiConsonantFlashcard("ฉ", "Chor Ching (Cymbals)", "High Class. Sound: Ch.", "High"));
+        cards.add(new ThaiConsonantFlashcard("ฐ", "Thor Than (Pedestal)", "High Class. Sound: Th.", "High"));
+        cards.add(new ThaiConsonantFlashcard("ถ", "Thor Thung (Sack)", "High Class. Sound: Th.", "High"));
+        cards.add(new ThaiConsonantFlashcard("ผ", "Phor Phueng (Bee)", "High Class. Sound: Ph.", "High"));
+        cards.add(new ThaiConsonantFlashcard("ฝ", "For Fa (Lid)", "High Class. Sound: F.", "High"));
+        cards.add(new ThaiConsonantFlashcard("ศ", "Sor Sa-la (Pavilion)", "High Class. Sound: S.", "High"));
+        cards.add(new ThaiConsonantFlashcard("ษ", "Sor Rue-si (Hermit)", "High Class. Sound: S.", "High"));
+        cards.add(new ThaiConsonantFlashcard("ส", "Sor Suea (Tiger)", "High Class. Sound: S.", "High"));
+        cards.add(new ThaiConsonantFlashcard("ห", "Hor Hip (Chest)", "High Class. Sound: H.", "High"));
+
+        // LOW CLASS
+        cards.add(new ThaiConsonantFlashcard("ค", "Khor Khwai (Buffalo)", "Low Class. Sound: K.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ฅ", "Khor Khon (Person)", "Low Class. Obsolete.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ฆ", "Khor Ra-khang (Bell)", "Low Class. Sound: K.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ง", "Ngor Ngu (Snake)", "Low Class. Sound: Ng.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ช", "Chor Chang (Elephant)", "Low Class. Sound: Ch.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ซ", "Sor So (Chain)", "Low Class. Sound: S.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ฌ", "Chor Cher (Tree)", "Low Class. Sound: Ch.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ญ", "Yor Ying (Woman)", "Low Class. Sound: Y.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ฑ", "Thor Mon-tho (Dancer)", "Low Class. Sound: Th.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ฒ", "Thor Phu-thao (Elder)", "Low Class. Sound: Th.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ณ", "Nor Nen (Novice Monk)", "Low Class. Sound: N.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ท", "Thor Tha-han (Soldier)", "Low Class. Sound: Th.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ธ", "Thor Thong (Flag)", "Low Class. Sound: Th.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("น", "Nor Nu (Mouse)", "Low Class. Sound: N.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("พ", "Phor Phan (Tray)", "Low Class. Sound: P.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ฟ", "For Fan (Teeth)", "Low Class. Sound: F.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ภ", "Phor Sam-phao (Sailboat)", "Low Class. Sound: P.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ม", "Mor Ma (Horse)", "Low Class. Sound: M.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ย", "Yor Yak (Giant)", "Low Class. Sound: Y.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ร", "Ror Rua (Boat)", "Low Class. Sound: R.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ล", "Lor Ling (Monkey)", "Low Class. Sound: L.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ว", "Wor Waen (Ring)", "Low Class. Sound: W.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ฬ", "Lor Chu-la (Kite)", "Low Class. Sound: L.", "Low"));
+        cards.add(new ThaiConsonantFlashcard("ฮ", "Hor Nok-huk (Owl)", "Low Class. Sound: H.", "Low"));
         return cards;
-    }
-
-    // --- For Task 3: Create 3 generic flashcards ---
-    private static List<Flashcard> genericFlashcards = createGenericFlashcards();
-    
-    private static List<Flashcard> createGenericFlashcards() {
-        List<Flashcard> cards = new ArrayList<>();
-        
-        // As requested, country-capital pairs
-        cards.add(new Flashcard("Japan", "Tokyo"));
-        cards.add(new Flashcard("France", "Paris"));
-        cards.add(new Flashcard("Thailand", "Bangkok"));
-        
-        return cards;
-    }
-    // --- END OF NEW CODE ---
-
-
-    // This is your old code, which is also outside main()
-    static class LoginRequest {
-        String username;
-        String password;
-    }
-
-    static class LoginResponse {
-        String token;
-        String username;
-        LoginResponse(String t, String u) {
-            token = t;
-            username = u;
-        }
-    }
-
-    static class ErrorResponse {
-        String error;
-        ErrorResponse(String e) {
-            error = e;
-        }
     }
 }

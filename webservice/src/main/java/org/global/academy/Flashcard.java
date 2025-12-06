@@ -1,36 +1,15 @@
-package org.global.academy; // Your correct package
+package org.global.academy;
 
-/**
- * This class holds data for a flashcard.
- * All graphics (Swing/AWT) code has been removed.
- */
 public class Flashcard {
-
-    private String front;
-    private String back;
-    private boolean learned;
+    protected String front;
+    protected String back;
 
     public Flashcard(String front, String back) {
         this.front = front;
         this.back = back;
-        this.learned = false;
     }
-
-    // Getters are needed for Gson to see the data
-    public String getFront() {
-        return front;
-    }
-
-    public String getBack() {
-        return back;
-    }
-
-    public boolean isLearned() {
-        return learned;
-    }
-
-    // Setter for 'learned' (optional but good to have)
-    public void setLearned(boolean learned) {
-        this.learned = learned;
-    }
+    
+    // Getters are needed for GSON to convert to JSON
+    public String getFront() { return front; }
+    public String getBack() { return back; }
 }
